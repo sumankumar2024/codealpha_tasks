@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Gallery</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for a clean, modern look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Style for the gallery items */
+        .gallery-item {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .gallery-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        /* Styles for the lightbox */
+        .lightbox {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .lightbox.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .lightbox-img {
+            transform: scale(0.9);
+            transition: transform 0.3s ease-in-out;
+        }
+        .lightbox.active .lightbox-img {
+            transform: scale(1);
+        }
+        /* Style for filter buttons */
+        .filter-btn.active {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold text-center text-gray-800 mb-4">Image Gallery</h1>
+        <p class="text-center text-gray-600 mb-8">Click on an image to view it in a lightbox.</p>
+
+        <!-- Bonus: Filter Buttons -->
+        <div id="filter-buttons" class="flex justify-center flex-wrap gap-2 mb-8">
+            <button class="filter-btn active bg-white hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded-full shadow transition-colors duration-300" data-filter="all">All</button>
+            <button class="filter-btn bg-white hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded-full shadow transition-colors duration-300" data-filter="nature">Nature</button>
+            <button class="filter-btn bg-white hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded-full shadow transition-colors duration-300" data-filter="city">City</button>
+            <button class="filter-btn bg-white hover:bg-blue-500 hover:text-white text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded-full shadow transition-colors duration-300" data-filter="tech">Technology</button>
+        </div>
+
+        <!-- Image Grid -->
+        <div id="gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <!-- Images will be injected here by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox" class="lightbox fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50">
+        <div class="relative">
+            <!-- Close Button -->
+            <button id="close-lightbox" class="absolute -top-12 right-0 text-white text-4xl hover:text-gray-300 transition-colors">&times;</button>
+            <!-- Image -->
+            <img id="lightbox-img" src="" alt="Lightbox image" class="lightbox-img max-w-[90vw] max-h-[85vh] rounded-lg shadow-xl">
+            <!-- Prev Button -->
+            <button id="prev-btn" class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 text-white text-5xl hover:text-gray-300 transition-colors">‹</button>
+            <!-- Next Button -->
+            <button id="next-btn" class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 text-white text-5xl hover:text-gray-300 transition-colors">›</button>
+            <p id="lightbox-caption" class="text-white text-center mt-2 text-lg"></p>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DATA ---
+            const images = [
+                { id: 1, src: 'nature1.jpeg', category: 'nature', caption: 'Jungle Bridge' },
+                { id: 2, src: 'city1.jpeg', category: 'city', caption: 'Skyscraper reflections at night' },
+                { id: 3, src: 'tech1.jpeg', category: 'tech', caption: 'Futuristic circuit board' },
+                { id: 4, src: 'nature2.jpeg', category: 'nature', caption: 'Sun rising' },
+                { id: 5, src: 'city2.jpeg', category: 'city', caption: 'Busy city street from above' },
+                { id: 6, src: 'tech2.jpeg', category: 'tech', caption: 'Glowing data streams' },
+                { id: 7, src: 'nat3.jpeg', category: 'nature', caption: 'River And Jungle' },
+                { id: 8, src: 'city3.jpeg', category: 'city', caption: 'Beautiful City' },
+                { id: 9, src: 'tech3.jpeg', category: 'tech', caption: 'Developer at a workstation' },
+                { id: 10, src: 'nat4.jpeg', category: 'nature', caption: 'Cold Autumn' },
+                { id: 11, src: 'city4.jpeg', category: 'city', caption: 'Modern architecture' },
+                { id: 12, src: 'tech4.jpeg', category: 'tech', caption: 'Artificial intelligence concept' }
+            ];
+
+            // --- DOM ELEMENTS ---
+            const galleryGrid = document.getElementById('gallery-grid');
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const lightboxCaption = document.getElementById('lightbox-caption');
+            const closeLightboxBtn = document.getElementById('close-lightbox');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const filterButtonsContainer = document.getElementById('filter-buttons');
+
+            let currentIndex = 0;
+            let currentFilter = 'all';
+
+            // --- FUNCTIONS ---
+
+            // Populate the gallery grid
+            function populateGallery(filter = 'all') {
+                currentFilter = filter;
+                galleryGrid.innerHTML = '';
+                const filteredImages = (filter === 'all') ? images : images.filter(img => img.category === filter);
+
+                filteredImages.forEach(image => {
+                    const item = document.createElement('div');
+                    item.classList.add('gallery-item', 'cursor-pointer', 'overflow-hidden', 'rounded-lg', 'shadow-md');
+                    item.innerHTML = `<img src="${image.src}" alt="${image.caption}" class="w-full h-full object-cover">`;
+                    item.dataset.id = image.id;
+                    item.dataset.category = image.category;
+                    galleryGrid.appendChild(item);
+                });
+            }
+
+            // Show lightbox with selected image
+            function showLightbox(imageId) {
+                const visibleImages = Array.from(galleryGrid.children).map(item => parseInt(item.dataset.id));
+                const image = images.find(img => img.id === imageId);
+                currentIndex = visibleImages.indexOf(imageId);
+                
+                if (image) {
+                    lightboxImg.src = image.src;
+                    lightboxCaption.textContent = image.caption;
+                    lightbox.classList.add('active');
+                }
+            }
+            
+            // Hide the lightbox
+            function hideLightbox() {
+                lightbox.classList.remove('active');
+            }
+
+            // Show the next image
+            function showNextImage() {
+                const visibleImagesIds = images.filter(img => currentFilter === 'all' || img.category === currentFilter).map(img => img.id);
+                currentIndex = (currentIndex + 1) % visibleImagesIds.length;
+                const nextImageId = visibleImagesIds[currentIndex];
+                showLightbox(nextImageId);
+            }
+            
+            // Show the previous image
+            function showPrevImage() {
+                const visibleImagesIds = images.filter(img => currentFilter === 'all' || img.category === currentFilter).map(img => img.id);
+                currentIndex = (currentIndex - 1 + visibleImagesIds.length) % visibleImagesIds.length;
+                const prevImageId = visibleImagesIds[currentIndex];
+                showLightbox(prevImageId);
+            }
+
+            // --- EVENT LISTENERS ---
+
+            // Open lightbox on image click
+            galleryGrid.addEventListener('click', (e) => {
+                const item = e.target.closest('.gallery-item');
+                if (item) {
+                    showLightbox(parseInt(item.dataset.id));
+                }
+            });
+
+            // Close lightbox
+            closeLightboxBtn.addEventListener('click', hideLightbox);
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox) {
+                    hideLightbox();
+                }
+            });
+
+            // Navigation buttons
+            nextBtn.addEventListener('click', showNextImage);
+            prevBtn.addEventListener('click', showPrevImage);
+
+            // Filter button clicks
+            filterButtonsContainer.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    // Update active button style
+                    document.querySelector('.filter-btn.active').classList.remove('active');
+                    e.target.classList.add('active');
+                    // Repopulate gallery
+                    populateGallery(e.target.dataset.filter);
+                }
+            });
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (!lightbox.classList.contains('active')) return;
+                if (e.key === 'ArrowRight') showNextImage();
+                if (e.key === 'ArrowLeft') showPrevImage();
+                if (e.key === 'Escape') hideLightbox();
+            });
+
+            // --- INITIALIZATION ---
+            populateGallery();
+        });
+    </script>
+</body>
+</html>
