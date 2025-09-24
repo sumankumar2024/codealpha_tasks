@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Basic Calculator</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for a clean, modern look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for the calculator */
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent; /* Removes blue tap highlight on mobile */
+        }
+        /* Custom focus ring for accessibility and style */
+        .btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); /* A light blue ring */
+        }
+        /* Style for the calculator display to prevent text selection */
+        .calculator-screen {
+            user-select: none; /* Prevents text from being selected */
+        }
+        /* Add a subtle animation on button press */
+        .btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <!-- Calculator Body -->
+    <div class="calculator-container w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 border-4 border-gray-200">
+        
+        <!-- Display Screen -->
+        <input type="text" id="display" readonly class="calculator-screen bg-gray-200 text-gray-900 text-5xl font-bold text-right w-full rounded-lg p-4 mb-6 focus:outline-none" placeholder="0">
+
+        <!-- Buttons Grid -->
+        <div class="grid grid-cols-4 gap-4">
+            <!-- Row 1 -->
+            <button class="btn clear-btn bg-red-500 hover:bg-red-600 text-white text-3xl font-bold rounded-lg py-4 transition-all duration-200" data-value="C">C</button>
+            <button class="btn operator-btn bg-gray-300 hover:bg-gray-400 text-gray-900 text-3xl font-bold rounded-lg py-4 transition-all duration-200" data-value="/">÷</button>
+            <button class="btn operator-btn bg-gray-300 hover:bg-gray-400 text-gray-900 text-3xl font-bold rounded-lg py-4 transition-all duration-200" data-value="*">×</button>
+            <button class="btn operator-btn bg-gray-300 hover:bg-gray-400 text-gray-900 text-3xl font-bold rounded-lg py-4 transition-all duration-200" data-value="-">−</button>
+
+            <!-- Row 2 -->
+            <button class="btn num-btn bg-gray-200 hover:bg-gray-300 text-gray-900 text-3xl font-bold rounded-lg py-4 transition-all duration-200" data-value="7">7</button>
+            <button class="btn num-btn bg-gray-200 hover:bg-gray-300 text-gray-900 text-3xl font-bold rounded-lg py-4 transition-all duration-200" data-value="8">8</button>
+            <button class="btn num-btn bg-gray-200 hover:bg-gray-300 text-gray-900 text-3xl font-bold rounded-lg py-4 transition-all duration-200" data-value="9">9</button>
+            <button class="btn operator-btn bg-gray-300 hover:bg-gray-400 text-gray-900 text-3xl font-bold rounded-lg py-4 row-span-2 transition-all duration-200" data-value="+">+</button>
+
+            <!-- Row 3 -->
+            <button class="btn num-btn bg-gray-200 hover:bg-gray-300 text-gray-900 text-3xl font-bold rounded-lg py-4 transition-all duration-200" data-value="4">4</button>
+            <button class="btn num-btn bg-gray-200 hover:bg-gray-300 text-gray-900 text-3xl font-bold rounded-lg py-4 transition-all duration-200" data-value="5">5</button>
+            <button class="btn num-btn bg-gray-200 hover:bg-gray-300 text-gray-900 text-3xl font-bold rounded-lg py-4 transition-all duration-200" data-value="6">6</button>
+            
+            <!-- Row 4 -->
+            <button class="btn num-btn bg-gray-200 hover:bg-gray-300 text-gray-900 text-3xl font-bold rounded-lg py-4 transition-all duration-200" data-value="1">1</button>
+            <button class="btn num-btn bg-gray-200 hover:bg-gray-300 text-gray-900 text-3xl font-bold rounded-lg py-4 transition-all duration-200" data-value="2">2</button>
+            <button class="btn num-btn bg-gray-200 hover:bg-gray-300 text-gray-900 text-3xl font-bold rounded-lg py-4 transition-all duration-200" data-value="3">3</button>
+            <button class="btn equals-btn bg-blue-500 hover:bg-blue-600 text-white text-3xl font-bold rounded-lg py-4 row-span-2 transition-all duration-200" data-value="=">=</button>
+
+            <!-- Row 5 -->
+            <button class="btn num-btn bg-gray-200 hover:bg-gray-300 text-gray-900 text-3xl font-bold rounded-lg py-4 col-span-2 transition-all duration-200" data-value="0">0</button>
+            <button class="btn num-btn bg-gray-200 hover:bg-gray-300 text-gray-900 text-3xl font-bold rounded-lg py-4 transition-all duration-200" data-value=".">.</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const display = document.getElementById('display');
+            const buttons = document.querySelectorAll('.btn');
+
+            let currentInput = '';
+            let shouldResetDisplay = false;
+
+            // Function to handle button clicks
+            function handleButtonClick(value) {
+                if (value === 'C') {
+                    // Clear the input
+                    currentInput = '';
+                    display.value = '';
+                } else if (value === '=') {
+                    // Evaluate the expression
+                    if (currentInput) {
+                        try {
+                            // Security Note: eval() is used for simplicity. In a production app,
+                            // it's safer to use a dedicated math expression parser.
+                            const result = eval(currentInput.replace('×', '*').replace('÷', '/').replace('−', '-'));
+                            // Check for invalid results like Infinity or NaN
+                            if (!isFinite(result)) {
+                                throw new Error("Invalid calculation");
+                            }
+                            display.value = parseFloat(result.toFixed(10)); // Fix floating point issues
+                            currentInput = display.value;
+                            shouldResetDisplay = true;
+                        } catch (error) {
+                            display.value = 'Error';
+                            currentInput = '';
+                            shouldResetDisplay = true;
+                        }
+                    }
+                } else {
+                    // Handle number and operator input
+                    if (shouldResetDisplay) {
+                        // If the display should be reset (after '=' or an error), clear it first
+                        display.value = '';
+                        currentInput = '';
+                        shouldResetDisplay = false;
+                    }
+                    // Append the new value
+                    currentInput += value;
+                    display.value += value;
+                }
+            }
+
+            // Add click event listeners to all buttons
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    handleButtonClick(button.dataset.value);
+                });
+            });
+
+            // --- Bonus: Keyboard Support ---
+            document.addEventListener('keydown', (event) => {
+                const key = event.key;
+                let buttonValue;
+
+                if (key >= '0' && key <= '9') {
+                    buttonValue = key;
+                } else if (key === '+' || key === '-') {
+                    buttonValue = key;
+                } else if (key === '*') {
+                    buttonValue = '×';
+                } else if (key === '/') {
+                    buttonValue = '÷';
+                } else if (key === '.') {
+                    buttonValue = '.';
+                } else if (key === 'Enter' || key === '=') {
+                    event.preventDefault(); // Prevent form submission if inside a form
+                    buttonValue = '=';
+                } else if (key === 'Backspace' || key === 'Delete' || key === 'Escape') {
+                    buttonValue = 'C';
+                }
+
+                if (buttonValue) {
+                    // Find the corresponding button and simulate a click for visual feedback
+                    const button = document.querySelector(`.btn[data-value="${buttonValue}"]`);
+                    if (button) {
+                        button.focus(); // Set focus for accessibility
+                        button.click(); // Trigger the click handler
+                    } else {
+                        // Handle cases like '-' where the symbol is different
+                        if (key === '-') {
+                           document.querySelector(`.btn[data-value="−"]`).click();
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
